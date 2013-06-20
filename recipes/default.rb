@@ -63,22 +63,22 @@ if node["collectd"]["plugins"]
   end
 end
 
-src_filepath = "#{Chef::Config[:file_cache_path]}/collectd-#{node["collectd"]["version"]}.tar.gz"
+src_filepath = "#{Chef::Config[:file_cache_path]}/collectd.zip"
 
-remote_file node['collectd']['url'] do
+remote_file src_filepath do
   source node["collectd"]["url"]
-  checksum node["collectd"]["checksum"]
+  # checksum node["collectd"]["checksum"]
   path src_filepath
   # notifies :run, "bash[install-collectd]", :immediately
-  # action :create_if_missing
+  action :create_if_missing
   backup false
 end
 
 bash "install-collectd" do
   cwd ::File.dirname(src_filepath)
   code <<-EOH
-    tar -xzf collectd-#{node["collectd"]["version"]}.tar.gz
-    (cd collectd-#{node["collectd"]["version"]} && ./configure --prefix=#{node["collectd"]["dir"]} && make && make install)
+    unzip collectd.zip
+    (cd collectd-source-master && ./configure --prefix=#{node["collectd"]["dir"]} && make && make install)
   EOH
   not_if do
     binary = "#{node["collectd"]["dir"]}/sbin/collectd"
