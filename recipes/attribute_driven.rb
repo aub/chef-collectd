@@ -1,13 +1,14 @@
 # treat the graphite plugin specially: set address from search or attributes
+skip_graphite = false
 if node["collectd"]["plugins"].key?("write_graphite")
   if node["collectd"]["graphite_ipaddress"].empty?
     if Chef::Config[:solo]
-      Chef::Application.fatal!("Graphite plugin enabled but no Graphite server configured.")
+      skip_graphite = true
     end
     graphite_server_results = search(:node, "roles:#{node["collectd"]["graphite_role"]} AND chef_environment:#{node.chef_environment}")
 
     if graphite_server_results.empty?
-      Chef::Application.fatal!("Graphite plugin enabled but no Graphite server found.")
+      skip_graphite = true
     else
       node.default["collectd"]["plugins"]["write_graphite"]["config"]["Host"] = graphite_server_results[0]["ipaddress"]
     end
@@ -21,10 +22,12 @@ end
 # flush all of configuration to conf.d/
 node["collectd"]["plugins"].each_pair do |plugin_key, definition|
   # Graphite auto-discovery
-  collectd_plugin plugin_key.to_s do
-    config definition["config"].to_hash if definition["config"]
-    template definition["template"].to_s if definition["template"]
-    cookbook definition["cookbook"].to_s if definition["cookbook"]
+  unless plugin_key == 'write_graphite' && skip_graphite
+    collectd_plugin plugin_key.to_s do
+      config definition["config"].to_hash if definition["config"]
+      template definition["template"].to_s if definition["template"]
+      cookbook definition["cookbook"].to_s if definition["cookbook"]
+    end
   end
 end
 
