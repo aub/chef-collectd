@@ -74,6 +74,10 @@ remote_file src_filepath do
   backup false
 end
 
+package 'unzip' do
+  action :install
+end
+
 bash "install-collectd" do
   cwd ::File.dirname(src_filepath)
   code <<-EOH
